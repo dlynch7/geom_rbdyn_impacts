@@ -113,7 +113,7 @@ At a high level of abstraction, the hybrid dynamics are
 	x^{+} &= \Delta(x^{-}),\qquad\textrm{if }h(x) = 0,
 \end{align}
 \end{subequations}
-where $h(x)$ is the \textit{event function} (a function of the state $x$ that returns zero when impact occurs) and $\Delta$ is a function that maps the pre-impact state $x^{-}$ to the post-impact state $x^{+}$.
+where $f$ is a vector field that defines the continuous-time dynamics, $h(x)$ is the \textit{event function} (a function of the state $x$ that returns zero when impact occurs) and $\Delta$ is a function that maps the pre-impact state $x^{-}$ to the post-impact state $x^{+}$.
 
 In this repo, the event function $h$ will return the height above ground of the lowest point on the ball, and the impact map $\Delta$ will arise from conservation of momentum.
 My focus in this repo is on how to incorporate event detection in a Runge-Kutta geometric integrator, rather than on the details of the event function, so I will start with a simple case: a spherical ball;
@@ -158,25 +158,56 @@ In these equations,
 Note that the state space of the first-order \ac{ODE} above is $\mathcal{X} = \mathbb{SE}(3)\times\mathbb{R}^6$, and the state $x\in\mathcal{X}$ is the pair $\left(T_\mathrm{wb},\mathcal{V}_\mathrm{b}\right)$.
 
 \subsection{Discrete Dynamics}
-\subsubsection{Event function}
+\subsubsection{Event Function and Event Detection}
 As stated above, our event function $h:\mathbb{SE}(3)\times\mathbb{R}^6 \to \mathbb{R}$ is the distance between the bottom of the ball and the ground.
+If, while integrating Equation \eqref{eq:first_order_state_space_dynamics} from $t_k$ to $t_{k+1}$, we observe that $h(x(t_{k+1})) \neq h(x(t_k))$, we must find the event time $t_\mathrm{e}\in\left[t_k,t_{k+1}\right]$ such that $h(x(t_\mathrm{e}) = 0)$.
+
+We consider two approaches to event finding:
+\begin{itemize}
+	\item Bisection root finding;
+	\item Newton-Raphson root finding.
+\end{itemize}
+While the bisection method may take more iterations to converge to an acceptable estimate of $t_\mathrm{e}$, it is guaranteed to return an estimate in the time window $\left[t_k,t_{k+1}\right]$.
+Conversely, while the Newton-Raphson method may be more elegant, it is possible it will return an estimate outside $\left[t_k,t_{k+1}\right]$, if $\mathrm{d}h/\mathrm{d}t$ is sufficiently small and $\mathrm{d}^2 h/\mathrm{d}t^2$ is sufficiently large.
+
+\paragraph{Bisection Root Finding}
+Searching for roots of the event function via bisection is simple:
+\begin{enumerate}
+	\item Given a time window $\left[t_k,t_{k+1}\right]$ for which $\mathrm{sign}(h(t_k)) \neq \mathrm{sign}(h(t_{k+1}))$, divide the time window in half to produce two new time windows: $\left[t_k, t_k + \Delta t/2\right]$ and $\left[t_k + \Delta t/2, t_{k+1}\right]$, where $\Delta t = t_{k+1} - t_k$.
+	\item If $\mathrm{sign}(h(t_k)) \neq \mathrm{sign}(h(t_k + \Delta t/2))$, repeat step 1 for the new time window $\left[t_k, t_k + \Delta t/2\right]$. Otherwise, repeat step 1 for the new time window $\left[t_k + \Delta t/2, t_{k+1}\right]$.
+	\item Iterate until some convergence criterion is satisfied, or until the maximum number of iterations is reached.
+\end{enumerate}
+
+\paragraph{Newton-Raphson Root Finding}
+Given an initial guess at the event time $t_0\in\left[t_k,t_{k+1}\right]$, the Taylor series expansion of $h(x(t))$ at $t_{0}$ is
+\begin{equation}
+	h(x(t)) = h(x(t_0)) + \mathcal{L}_f h(x(t_0))\left(t - t_n\right) + \mathrm{h.o.t},
+\end{equation}
+where $\mathcal{L}_f h(x(t_0))$ is the Lie derivative of $h$ along $f$ evaluated at the state $x$ at time $t_0$:
+\begin{align}
+	\begin{split}
+		\mathcal{L}_f h(x(t_0)) &= \frac{\mathrm{d}h}{\mathrm{d}t}\bigg\vert_{t_0}\\
+		&= \frac{\partial h}{\partial x}\frac{\mathrm{d}x}{\mathrm{d}t}\bigg\vert_{t_0}\\
+		&= \frac{\partial h}{\partial x}f(x(t_0)),
+	\end{split}
+\end{align}
+where $f$ is the right-hand side of Equation \eqref{eq:first_order_state_space_dynamics}. 
+Neglecting higher-order terms, setting $h(x(t)) = 0$, and solving for $t$, we obtain a first-order approximation for the event time:
+\begin{equation}
+	t \approx t_0 - \left(\mathcal{L}_f h(x(t_0))\right)^{-1}h(x(t_0)).
+\end{equation}
+Updating our initial guess with this new $t$ and repeating the above, we get the following iteration:
+\begin{equation}
+	t_{n+1} = t_{n} - \left(\mathcal{L}_f h(x(t_n))\right)^{-1}h(x(t_n)).
+\end{equation},
+which we repeat until some convergence criterion is satisfied or until the number of iterations reaches a user-specified maximum.
+
 \paragraph{Simple Case - Sphere:}
 The position of the bottom of a sphere with radius $r$ is
 \begin{equation}
 	h(T_\mathrm{wb},\mathcal{V}_\mathrm{b}) = a\transpose T_\mathrm{wb} b - r,
 \end{equation}
 where $a = \left[0,0,1,0\right]\transpose$ and $b = \left[0,0,0,1\right]\transpose$.
-
-Looking ahead to event detection, we will employ a Newton-Raphson root-finding algorithm to find $t$ such that $h(x(t) = 0)$.
-Newton-Raphson requires the derivative of the event function with respect to the event time:
-\begin{align}
-	\begin{split}
-		\mathrm{d}h/\mathrm{d}t &= \mathcal{L}_f h(x)\\
-		&= \frac{\partial h}{\partial x}f(x(t))\\
-		&= \frac{\partial h}{\partial x}\frac{\mathrm{d}x}{\mathrm{d}t},
-	\end{split}
-\end{align}
-where $f$ is the right-hand side of Equation \eqref{eq:first_order_state_space_dynamics}. 
 Intuitively, $\mathrm{d}h/\mathrm{d}t$ should be the velocity of the \ac{COM} in the $\hat{z}_\mathrm{w}$ direction: $\mathrm{d}h/\mathrm{d}t = a\transpose\dot{T}_\mathrm{wb} b$.
 For this simple case,
 \begin{equation}
