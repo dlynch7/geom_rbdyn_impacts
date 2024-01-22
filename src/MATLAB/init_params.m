@@ -22,6 +22,7 @@ params.dyn.mass = 1; % rigid body mass [kg]
 
 switch body_name
     case 'rect_prism'
+        params.body_name = body_name;
         % extract dimensions from input struct:
         l = dimensions.rect_prism.l; % length [m]
         w = dimensions.rect_prism.w; % width  [m]
@@ -32,6 +33,7 @@ switch body_name
         Iyy = params.dyn.mass*(l^2 + h^2)/12;
         Izz = params.dyn.mass*(l^2 + w^2)/12;
     case 'cylinder'
+        params.body_name = body_name;
         % extract dimensions from input struct:
         r = dimensions.cylinder.r; % radius [m]
         h = dimensions.cylinder.h; % height [m]
@@ -41,6 +43,7 @@ switch body_name
         Iyy = Ixx;
         Izz = params.dyn.mass*(r^2)/2;
     case 'ellipsoid'
+        params.body_name = body_name;
         % geometry and inertia components for an ellipsoid:
         a = dimensions.ellipsoid.a; % ellispoid x-axis length [m]
         b = dimensions.ellipsoid.b; % ellispoid y-axis length [m]
