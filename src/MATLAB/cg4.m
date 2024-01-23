@@ -27,7 +27,7 @@
 %   where d^2q/dt^2 = g(q,dqdt) is the original 2nd-order ODE.
 %   
 % Inputs:
-%   odefun: handle to 2nd-order ODE function that computes dVbdt (time derivative
+%   ode_fun: handle to 2nd-order ODE function that computes dVbdt (time derivative
 %        of body twist), given t, Twb, Vb, Fb, and params (see below for
 %        description of each input argument)
 %   dt:  timestep size (scalar)
@@ -43,7 +43,7 @@
 %   Twb_new: the new body configuration
 %   Vb: the new body twist
 
-function [t_new,Twb_new,Vb_new] = cg4(odefun,dt,t,Twb_init,Vb_init)
+function [t_new,Twb_new,Vb_new] = cg4(ode_fun,dt,t_init,Twb_init,Vb_init)
 %% 4th order, 5-stage Runge-Kutta coefficients
 a = zeros(5,5);
 b = zeros(5,1);
@@ -87,7 +87,7 @@ for i = 1:s
         Twb_tmp{i} = Twb_tmp{i}*MatrixExp6(dt*a(i,j)*VecTose3(Vb_tmp{j}));
          Vb_tmp{i} = Vb_tmp{i} + dt*a(i,j)*K_tmp{j};
     end
-    K_tmp{i} = feval(odefun,t + c(i)*dt,Twb_tmp{i},Vb_tmp{i});
+    K_tmp{i} = feval(ode_fun,t_init + c(i)*dt,Twb_tmp{i},Vb_tmp{i});
 end
 
 %% Part 2 of 2: compute output from intermediate values
@@ -98,6 +98,6 @@ for i = 1:s
     Twb_new = Twb_new*MatrixExp6(dt*b(i)*VecTose3(Vb_tmp{i}));
      Vb_new = Vb_new + dt*b(i)*K_tmp{i};
 end
-t_new = t + dt;
+t_new = t_init + dt;
 
 end
