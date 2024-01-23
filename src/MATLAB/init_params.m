@@ -52,9 +52,18 @@ switch body_name
         Iyy = params.dyn.mass*(a^2 + c^2)/5;
         Izz = params.dyn.mass*(a^2 + b^2)/5;
         
+        % parameters that are intrinsic to ellipsoid geometry:
         params.geom.ellipsoid.semi_axes.a = a;
         params.geom.ellipsoid.semi_axes.b = b;
         params.geom.ellipsoid.semi_axes.c = c;
+        
+        % visualization parameters that are not intrinsic to ellipsoid
+        % geometry:
+        params.viz.ellipsoid.face.num = 20;
+        params.viz.ellipsoid.face.color = 0.75*[0 1 1];
+        params.viz.ellipsoid.face.alpha = 0.5;
+        params.viz.ellipsoid.edge.color = [0 0 0];
+        params.viz.ellipsoid.edge.alpha = 0.5;
         
     otherwise
         error("Unrecognized input for 'body_name' argument.");
@@ -68,5 +77,13 @@ params.dyn.inertia_matrix = diag([Ixx,Iyy,Izz]);
 % inertia:
 params.dyn.spatial_inertia_matrix_CoM = [params.dyn.inertia_matrix, zeros(3);
                                          zeros(3), params.dyn.mass*eye(3)];
+                                     
+params.viz.margin_scale = 1.5;
+
+% ground visualization parameters
+params.viz.ground.face.color = [139,69,19]./255;
+params.viz.ground.face.alpha = 0.5;
+params.viz.ground.edge.color = 'none';
+params.viz.ground.edge.alpha = 1;
 
 end
