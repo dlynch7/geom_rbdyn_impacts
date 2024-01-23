@@ -33,9 +33,9 @@ switch params.body_name
         z_hat_w = [0;0;1]; % unit vector in world-frame +z direction ("up")
         n_hat = -z_hat_w;  % unit vector normal to bottom-most point on 
                            % ellipsoid surface
-        D_inv = diag([params.geom.semi_axes.a^2;
-                      params.geom.semi_axes.b^2;
-                      params.geom.semi_axes.c^2]);
+        D_inv = diag([params.geom.ellipsoid.semi_axes.a^2;
+                      params.geom.ellipsoid.semi_axes.b^2;
+                      params.geom.ellipsoid.semi_axes.c^2]);
         t1 = R_wb*D_inv*transpose(R_wb)*n_hat; % intermediate variable
         t2 = transpose(n_hat)*t1;             % intermediate variable
         signed_dist = transpose(z_hat_w)*(p_wb + t1/sqrt(t2));

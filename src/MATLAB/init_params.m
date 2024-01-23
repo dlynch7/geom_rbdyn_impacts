@@ -52,9 +52,10 @@ switch body_name
         Iyy = params.dyn.mass*(a^2 + c^2)/5;
         Izz = params.dyn.mass*(a^2 + b^2)/5;
         
-        params.geom.semi_axes.a = a;
-        params.geom.semi_axes.b = b;
-        params.geom.semi_axes.c = c;
+        params.geom.ellipsoid.semi_axes.a = a;
+        params.geom.ellipsoid.semi_axes.b = b;
+        params.geom.ellipsoid.semi_axes.c = c;
+        
     otherwise
         error("Unrecognized input for 'body_name' argument.");
 end
