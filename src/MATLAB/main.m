@@ -22,11 +22,14 @@ init_env;
 body_name = 'ellipsoid';
 dimensions.ellipsoid.a = 0.1;
 dimensions.ellipsoid.b = 0.1;
-dimensions.ellipsoid.c = 1;
+dimensions.ellipsoid.c = 0.2;
 params = init_params(body_name,dimensions);
 
 %% Set initial conditions and numerical integration parameters
 Rwb_init = eye(3);
+Rwb_init = [0 0 1;
+            0 1 0;
+           -1 0 0];
 Twb_init = [Rwb_init,   zeros(3,1);
             zeros(1,3), 1]; % CoM frame coincident with world frame
 Twb_init(3,4) = 1; % initial height above ground [m]
@@ -35,7 +38,7 @@ Fb = zeros(6,1);
         
 dt = 1e-2; % timestep size [s]
 t0 = 0;
-tf = 1; % simulation duration [s]
+tf = 0.5; % simulation duration [s]
 t = t0:dt:tf;
 
 % event location parameters:
@@ -65,6 +68,9 @@ for k = 1:numel(t)-1
     end
     
 end
+
+%% Animate simulation
+animate(Twb,t,params);
 
 %% Postprocess
 % kinematics:
