@@ -33,7 +33,7 @@ Twb_init(3,4) = 1; % initial height above ground [m]
 Vb_init = [10;10;10;0;0;0];
 Fb = zeros(6,1);
         
-dt = 1e-3; % timestep size [s]
+dt = 1e-2; % timestep size [s]
 t0 = 0;
 tf = 1; % simulation duration [s]
 t = t0:dt:tf;
@@ -46,56 +46,24 @@ bis_its_max = 100;
 Twb{1} = Twb_init;
 Vb{1} = Vb_init;
 for k = 1:numel(t)-1
-    t_start = t(k);
-    t_end = t(k+1);
-    [~,Twb{k+1},Vb{k+1}] = cg4(@rbdyn,dt,t(k),Twb{k},Vb{k},Fb,params);
+    ode_fun = @(t,T,V) rbdyn(t,T,V,Fb,params);
+    event_fun = @(T) dist_to_impact(T,params);
+    [~,Twb{k+1},Vb{k+1}] = cg4(ode_fun,dt,t(k),Twb{k},Vb{k});
     
-    event_time = event_locator(@(T) dist_to_impact(T,params),...
-                                [t(k),t(k+1)],...
-                                Twb{k},...
-                                Vb{k},...
-                                bis_err_tol,...
-                                bis_its_max);
-    
-    % check for impact at t and t + dt:
-    h_start = dist_to_impact(Twb{k},params);
-    h_end = dist_to_impact(Twb{k+1},params);
-    
-    Twb_start = Twb{k};
-    Vb_start = Vb{k};
-    
-    if sign(h_end) ~= sign(h_start)
-        % bisection search:
-        bis_err = 10*bis_err_tol;
-        bis_its = 0;
-        while ((bis_err > bis_err_tol) && (bis_its < bis_its_max))
-            t_mid = t_start + 0.5*(t_end - t_start);
-            [~,Twb_mid,Vb_mid] = cg4(@rbdyn,t_mid - t_start,t_start,Twb_start,Vb_start,Fb,params);
-            h_mid = dist_to_impact(Twb_mid,params);
-            
-            % update inputs to termination criteria:
-            bis_err = abs(h_mid);
-            bis_its = bis_its + 1;
-
-            if sign(h_mid) ~= sign(h_start)
-%                 fprintf('Iteration %d: impact occurred between t = %f and %f s.\n',bis_its,t_start,t_mid);
-                t_end = t_mid;
-                h_end = h_mid;
-            elseif sign(h_mid) ~= sign(h_end)
-%                 fprintf('Iteration %d: impact occurred between t = %f and %f s.\n',bis_its,t_mid,t_end);
-                t_start = t_mid;
-                h_start = h_mid;
-                Twb_start = Twb_mid;
-                Vb_start = Vb_mid;
-            elseif h_mid == 0
-                break;
-            else % no event detected
-               error('Failed to locate event.');
-            end
-        end
-        fprintf('Impact at t = %f s, %d iterations, error = %f.\n',...
-            t_mid,bis_its,bis_err);
+    [t_event,exitflag,err,its] = event_locator(event_fun,...
+                                               ode_fun,...
+                                               t(k),t(k+1),...
+                                               Twb{k},Twb{k+1},...
+                                               Vb{k},Vb{k+1},...
+                                               bis_err_tol,bis_its_max);
+                        
+    if ~isempty(t_event)
+        fprintf('Impact at t = %f s\n',t_event);
+        fprintf('\texit flag: %d\n',exitflag);
+        fprintf('\terror = %.2E.\n',err);
+        fprintf('\t%d iterations\n',its);
     end
+    
 end
 
 %% Postprocess
@@ -128,12 +96,12 @@ end
 figure;
 subplot(2,1,1)
 plot(t,p_hist(3,:),'k:',t,dist_hist,'k-','LineWidth',2)
-legend('$p_z$','distance to impact','Location','Best')
+legend('$p_z$','bottom of ellipsoid','Location','Best')
 ylabel('position [m]')
 subplot(2,1,2)
 plot(t,p_hist(3,:)- dist_hist,'k-','LineWidth',2)
-legend('$p_z$ - distance to impact','Location','Best')
-ylabel('position [m]')
+legend('$p_z$ - bottom of ellipsoid','Location','Best')
+ylabel('distance [m]')
 xlabel('time $t$ [s]')
 
 figure;
