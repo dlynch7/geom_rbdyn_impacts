@@ -22,7 +22,7 @@ init_env;
 body_name = 'ellipsoid';
 dimensions.ellipsoid.a = 0.1;
 dimensions.ellipsoid.b = 0.1;
-dimensions.ellipsoid.c = 0.1;
+dimensions.ellipsoid.c = 1;
 params = init_params(body_name,dimensions);
 
 %% Set initial conditions and numerical integration parameters
@@ -33,16 +33,69 @@ Twb_init(3,4) = 1; % initial height above ground [m]
 Vb_init = [10;10;10;0;0;0];
 Fb = zeros(6,1);
         
-dt = 1e-2; % timestep size [s]
+dt = 1e-3; % timestep size [s]
 t0 = 0;
 tf = 1; % simulation duration [s]
 t = t0:dt:tf;
+
+% event location parameters:
+bis_err_tol = 1e-6;
+bis_its_max = 100;
 
 %% Simulate via numerical integration
 Twb{1} = Twb_init;
 Vb{1} = Vb_init;
 for k = 1:numel(t)-1
+    t_start = t(k);
+    t_end = t(k+1);
     [~,Twb{k+1},Vb{k+1}] = cg4(@rbdyn,dt,t(k),Twb{k},Vb{k},Fb,params);
+    
+    event_time = event_locator(@(T) dist_to_impact(T,params),...
+                                [t(k),t(k+1)],...
+                                Twb{k},...
+                                Vb{k},...
+                                bis_err_tol,...
+                                bis_its_max);
+    
+    % check for impact at t and t + dt:
+    h_start = dist_to_impact(Twb{k},params);
+    h_end = dist_to_impact(Twb{k+1},params);
+    
+    Twb_start = Twb{k};
+    Vb_start = Vb{k};
+    
+    if sign(h_end) ~= sign(h_start)
+        % bisection search:
+        bis_err = 10*bis_err_tol;
+        bis_its = 0;
+        while ((bis_err > bis_err_tol) && (bis_its < bis_its_max))
+            t_mid = t_start + 0.5*(t_end - t_start);
+            [~,Twb_mid,Vb_mid] = cg4(@rbdyn,t_mid - t_start,t_start,Twb_start,Vb_start,Fb,params);
+            h_mid = dist_to_impact(Twb_mid,params);
+            
+            % update inputs to termination criteria:
+            bis_err = abs(h_mid);
+            bis_its = bis_its + 1;
+
+            if sign(h_mid) ~= sign(h_start)
+%                 fprintf('Iteration %d: impact occurred between t = %f and %f s.\n',bis_its,t_start,t_mid);
+                t_end = t_mid;
+                h_end = h_mid;
+            elseif sign(h_mid) ~= sign(h_end)
+%                 fprintf('Iteration %d: impact occurred between t = %f and %f s.\n',bis_its,t_mid,t_end);
+                t_start = t_mid;
+                h_start = h_mid;
+                Twb_start = Twb_mid;
+                Vb_start = Vb_mid;
+            elseif h_mid == 0
+                break;
+            else % no event detected
+               error('Failed to locate event.');
+            end
+        end
+        fprintf('Impact at t = %f s, %d iterations, error = %f.\n',...
+            t_mid,bis_its,bis_err);
+    end
 end
 
 %% Postprocess
