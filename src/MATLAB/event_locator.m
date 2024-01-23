@@ -12,15 +12,19 @@
 %
 % Inputs:
 %   event_fun: handle to the function whose zero-crossing we are finding
-%   tspan: time window [t_init, t_end]; outer bounds on event time
+%   ode_fun:
+%   t_init: lower bound on event time
+%   t_term: upper bound on event time
 %   Twb_init: configuration of body frame {b} w.r.t. world frame {w} at
 %       t_init
+%   Twb_term: configuration of body frame {b} w.r.t. world frame {w} at
+%       t_term
 %   Vb_init: body twist at t_init
+%   Vb_term: body twist at t_term
 %   err_tol: convergence critertion; absolute value of event function must
 %       be less than this number for event_locator to return exitflag = 1
-%   max_its: maximum number of iterations the bisection method may take; if
-%       bisection method exceeds this limit, event_locator returns exitflag
-%       = 0
+%   max_its: maximum iterations the bisection method may take; if bisection
+%       method exceeds this limit, event_locator returns exitflag = 0
 %
 % Outputs:
 %   event_time: the time at which the event function first crosses zero
@@ -29,10 +33,72 @@
 %   iterations (optional): number of iterations taken by bisection method
 
 function [event_time,varargout] = event_locator(event_fun,...
-                                                tspan,...
+                                                odefun,...
+                                                t_init,...
+                                                t_term,...
                                                 Twb_init,...
+                                                Twb_term,...
                                                 Vb_init,...
+                                                Vb_term,...
                                                 err_tol,...
                                                 max_its)
+                                            
+    % initialize outputs:
+    event_time = [];
+    exitflag = [];
+    err = [];
+    its = [];
 
+    % check for impact at t and t + dt:
+    h_init = feval(event_fun,Twb_init);
+    h_term = feval(event_fun,Twb_term);
+    
+    if sign(h_term) ~= sign(h_init)
+        % bisection search:
+        err = 10*err_tol;
+        its = 0;
+        while ((err > err_tol) && (its < max_its))
+            % calculate state (Twb, Vb) and event function (h) midway
+            % between t_init and t_term:
+            t_mid = t_init + 0.5*(t_term - t_init);
+            dt = t_mid - t_init;
+            [~,Twb_mid,Vb_mid] = cg4(odefun,dt,t_init,Twb_init,Vb_init);
+            h_mid = feval(event_fun,Twb_mid);
+            
+            % update inputs to termination criteria:
+            err = abs(h_mid);
+            its = its + 1;
+
+            % check for zero crossing in between t_init and t_mid and
+            % between t_mid and t_term:
+            if sign(h_mid) ~= sign(h_init)
+                t_term = t_mid;
+                h_term = h_mid;
+            elseif sign(h_mid) ~= sign(h_term)
+                t_init = t_mid;
+                h_init = h_mid;
+                Twb_init = Twb_mid;
+                Vb_init = Vb_mid;
+            elseif h_mid == 0
+                break;
+            else
+                continue;
+            end
+        end
+        event_time = t_mid;
+        
+         % set exitflag:
+        if ((err < err_tol) && (its < max_its))
+            exitflag = 1; % success
+        elseif (its >= max_its)
+            exitflag = 0; % reached iteration limit
+        else
+            exitflag = -1;
+        end
+    end
+    
+    varargout{1} = exitflag;
+    varargout{2} = err;
+    varargout{3} = its;
+                                            
 end
