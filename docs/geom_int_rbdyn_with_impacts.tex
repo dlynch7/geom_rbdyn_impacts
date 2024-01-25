@@ -336,4 +336,48 @@ The event function for the ellipsoid impacting ground is then
 \end{equation}
 
 \subsubsection{Impact Map}
+Suppose contact occurs at a point $\colvec{c}\in\mathbb{R}^3$.
+The transformation matrix $T_\mathrm{wc}\in\mathbb{SE}(3)$ gives the location of the contact point in $\cframe{w}$ and the orientation $R_\mathrm{wc}\in\mathbb{SO}(3)$ of $\hat{\colvec{e}}$, the unit vector normal to the surface at $\colvec{c}$.
+Assuming frictionless contact, the rigid body experiences a contact force with magnitude $\lambda$ in the direction $\hat{\colvec{e}}$.
+Expressed in $\cframe{c}$, the wrench due to this contact force is $\left[0_{1\times 5},\lambda\right]\transpose$.
+
+At all times, the body also experiences a downward force $-\mathfrak{m}g$ due to gravity.
+Define $\cframe{b'}$ to be the frame coincident with $\cframe{b}$ but aligned with $\cframe{w}$, so that $p_\mathrm{wb'} = p_\mathrm{wb}$ and $R_\mathrm{wb'} = I_{3\times3}$.
+Expressed in $\cframe{b'}$, the wrench due to gravity is $\left[0_{1\times 5},-\mathfrak{m}_\mathrm{b}g\right]\transpose$.
+
+During contact, the net wrench on the body, expressed in $\cframe{b}$, is
+\begin{equation}\label{eq:net_body_wrench_during_impact}
+	\mathcal{F}_\mathrm{b}
+	=
+	\Ad{cb}\transpose\begin{bmatrix}
+		0_{5\times1}\\
+		\lambda
+	\end{bmatrix}
+	-
+	\Ad{b'b}\transpose\begin{bmatrix}
+		0_{5\times1}\\
+		\mathfrak{m}_\mathrm{b}g
+	\end{bmatrix},
+\end{equation}
+where $T_\mathrm{cb} = T_\mathrm{wc}^{-1}T_\mathrm{wb}$ and $T_\mathrm{b'b} = T_\mathrm{wb'}^{-1}T_\mathrm{wb}$.
+
+We now use the impulse-momentum theorem and conservation of energy to derive the impact map.
+The impulse-momentum theorem states
+\begin{subequations}\label{eq:impulse-momentum-impact}
+	\begin{align}
+		\mathcal{G}_\mathrm{b}\left(\mathcal{V}_\mathrm{b}^+ - \mathcal{V}_\mathrm{b}^-\right) &= \mathcal{F}_\mathrm{b}\textrm{, or, equivalently,}\\
+		\mathcal{V}_\mathrm{b}^+ = \mathcal{V}_\mathrm{b}^- + \mathcal{G}_\mathrm{b}^{-1}\mathcal{F}_\mathrm{b},
+	\end{align}
+\end{subequations}
+where $\mathcal{V}_\mathrm{b}^-\in\mathbb{R}^6$ and $\mathcal{V}_\mathrm{b}^+\in\mathbb{R}^6$ are the body twist before and after impact, respectively, and where the net wrench $\mathcal{F}_\mathrm{b}$ is given in Equation \eqref{eq:net_body_wrench_during_impact}.
+
+Since $T_\mathrm{wb}$ does not change during impact, conservation of energy reduces to a quadratic constraint on the body twist:
+\begin{equation}\label{eq:energy_conservation_impact}
+	\frac{1}{2}\left(\mathcal{V}_\mathrm{b}^+\right)\transpose\mathcal{G}_\mathrm{b}\mathcal{V}_\mathrm{b}^+
+	=
+	\frac{1}{2}\left(\mathcal{V}_\mathrm{b}^-\right)\transpose\mathcal{G}_\mathrm{b}\mathcal{V}_\mathrm{b}^-,
+\end{equation}
+which is particularly simple since we deliberately choose $\cframe{b}$ such that $\mathcal{G}_\mathrm{b}$ is diagonal.
+Together, Equations \eqref{eq:impulse-momentum-impact} and \eqref{eq:energy_conservation_impact} represent seven constraints and seven unknowns ($\mathcal{V}_\mathrm{b}^+$ and $\lambda$).
+
 \end{document}
