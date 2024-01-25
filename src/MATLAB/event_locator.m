@@ -27,12 +27,14 @@
 %       method exceeds this limit, event_locator returns exitflag = 0
 %
 % Outputs:
-%   event_time: the time at which the event function first crosses zero
+%   t_e: the time at which the event function first crosses zero
+%   Twb_e: configuration of body frame {b} w.r.t. world frame {w} at t_e
+%   Vb_e: body twist at t_e
 %   exitflag (optional): 1 (success), 0 (exceeded max_its), or -1 (fail)
 %   err (optional): value of event function at event function; compare to 0
 %   iterations (optional): number of iterations taken by bisection method
 
-function [event_time,varargout] = event_locator(event_fun,...
+function [t_e,varargout] = event_locator(event_fun,...
                                                 odefun,...
                                                 t_init,...
                                                 t_term,...
@@ -44,7 +46,9 @@ function [event_time,varargout] = event_locator(event_fun,...
                                                 max_its)
                                             
     % initialize outputs:
-    event_time = [];
+    t_e = [];
+    Twb_e = Twb_init;
+    Vb_e = Vb_init;
     exitflag = [];
     err = [];
     its = [];
@@ -85,7 +89,9 @@ function [event_time,varargout] = event_locator(event_fun,...
                 continue;
             end
         end
-        event_time = t_mid;
+        t_e = t_mid;
+        Twb_e = Twb_mid;
+        Vb_e = Vb_mid;
         
          % set exitflag:
         if ((err < err_tol) && (its < max_its))
@@ -97,8 +103,10 @@ function [event_time,varargout] = event_locator(event_fun,...
         end
     end
     
-    varargout{1} = exitflag;
-    varargout{2} = err;
-    varargout{3} = its;
+    varargout{1} = Twb_e;
+    varargout{2} = Vb_e;
+    varargout{3} = exitflag;
+    varargout{4} = err;
+    varargout{5} = its;
                                             
 end
