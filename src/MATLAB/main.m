@@ -22,35 +22,37 @@ init_env;
 body_name = 'ellipsoid';
 dimensions.ellipsoid.a = 0.1;
 dimensions.ellipsoid.b = 0.1;
-dimensions.ellipsoid.c = 0.2;
+dimensions.ellipsoid.c = 0.15;
 params = init_params(body_name,dimensions);
 
 %% Set initial conditions and numerical integration parameters
 Rwb_init = eye(3);
-Rwb_init = [0 0 1;
-            0 1 0;
-           -1 0 0];
+% Rwb_init = [0 0 1;
+%             0 1 0;
+%            -1 0 0];
 Twb_init = [Rwb_init,   zeros(3,1);
             zeros(1,3), 1]; % CoM frame coincident with world frame
 Twb_init(3,4) = 1; % initial height above ground [m]
-Vb_init = [10;10;10;0;0;0];
+Vb_init = [10;10;10;0.5;0.1;0];
+% Vb_init = [1;0;0;0;0;0];
 Fb = zeros(6,1);
         
 dt = 1e-2; % timestep size [s]
 t0 = 0;
-tf = 0.5; % simulation duration [s]
+tf = 5; % simulation duration [s]
 t = t0:dt:tf;
 
 % event location parameters:
 bis_err_tol = 1e-6;
 bis_its_max = 100;
 
+ode_fun = @(t,T,V) rbdyn(t,T,V,Fb,params);
+event_fun = @(T) dist_to_impact(T,params);
+
 %% Simulate via numerical integration
 Twb{1} = Twb_init;
 Vb{1} = Vb_init;
 for k = 1:numel(t)-1
-    ode_fun = @(t,T,V) rbdyn(t,T,V,Fb,params);
-    event_fun = @(T) dist_to_impact(T,params);
     [~,Twb{k+1},Vb{k+1}] = cg4(ode_fun,dt,t(k),Twb{k},Vb{k});
     
     [t_e,Twb_e,Vb_e] = event_locator(event_fun,...
@@ -62,6 +64,26 @@ for k = 1:numel(t)-1
                         
     if ~isempty(t_e)
         fprintf('Impact at t = %f s\n',t_e);
+        
+        % express contact point in {w}:
+        pwc = closest_point_on_ellipsoid(Twb_e,params);
+        
+        % construct semi-arbitrary Rwc s.t. z-axis of {c} is unit normal of
+        % plane (angle about unit normal doesn't matter:
+        Rwc = MatrixExp3(VecToso3(params.geom.plane.unit_normal));
+        
+        % combine Rwc and pwc into Twc:
+        Twc = RpToTrans(Rwc,pwc);
+        
+        [Twb_post,Vb_post,impulse_mag] = impact_map(Twb_e,...
+                                                    Vb_e,...
+                                                    Twc,...
+                                                    Fb,...
+                                                    params);
+                                              
+        % simulate to end of timestep using (Twb_post,Vb_post) as initial
+        % conditions:
+        [~,Twb{k+1},Vb{k+1}] = cg4(ode_fun,t(k+1)-t_e,t_e,Twb_post,Vb_post);
     end
     
 end

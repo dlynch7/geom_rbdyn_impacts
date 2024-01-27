@@ -60,8 +60,9 @@ switch body_name
         % visualization parameters that are not intrinsic to ellipsoid
         % geometry:
         params.viz.ellipsoid.face.num = 20;
-        params.viz.ellipsoid.face.color = 0.75*[0 1 1];
-        params.viz.ellipsoid.face.alpha = 0.5;
+%         params.viz.ellipsoid.face.color = 0.75*[0 1 1];
+        params.viz.ellipsoid.face.color = [139,69,19]./255;
+        params.viz.ellipsoid.face.alpha = 0.75;
         params.viz.ellipsoid.edge.color = [0 0 0];
         params.viz.ellipsoid.edge.alpha = 0.5;
         
@@ -80,10 +81,15 @@ params.dyn.spatial_inertia_matrix_CoM = [params.dyn.inertia_matrix, zeros(3);
                                      
 params.viz.margin_scale = 1.5;
 
-% ground visualization parameters
-params.viz.ground.face.color = [139,69,19]./255;
-params.viz.ground.face.alpha = 0.5;
-params.viz.ground.edge.color = 'none';
-params.viz.ground.edge.alpha = 1;
+% impact plane geometry parameters:
+params.geom.plane.unit_normal = [0;0;1];
+params.geom.plane.point = zeros(3,1);
+
+% plane visualization parameters
+params.viz.plane.face.color = 0.5*[0,1,0];
+% params.viz.plane.face.color = [139,69,19]./255;
+params.viz.plane.face.alpha = 0.75;
+params.viz.plane.edge.color = 'none';
+params.viz.plane.edge.alpha = 1;
 
 end
