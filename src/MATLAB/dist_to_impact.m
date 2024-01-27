@@ -28,17 +28,10 @@ function signed_dist = dist_to_impact(Twb,params)
 
 switch params.body_name
     case 'ellipsoid'
-        R_wb = Twb(1:3,1:3); % orientation of {b} in {w}
-        p_wb = Twb(1:3,4); % position of {b} origin in {w}
-        z_hat_w = [0;0;1]; % unit vector in world-frame +z direction ("up")
-        n_hat = -z_hat_w;  % unit vector normal to bottom-most point on 
-                           % ellipsoid surface
-        D_inv = diag([params.geom.ellipsoid.semi_axes.a^2;
-                      params.geom.ellipsoid.semi_axes.b^2;
-                      params.geom.ellipsoid.semi_axes.c^2]);
-        t1 = R_wb*D_inv*transpose(R_wb)*n_hat; % intermediate variable
-        t2 = transpose(n_hat)*t1;             % intermediate variable
-        signed_dist = transpose(z_hat_w)*(p_wb + t1/sqrt(t2));
+        pwc = closest_point_on_ellipsoid(Twb,params);
+        n = params.geom.plane.unit_normal;
+        x0 = params.geom.plane.point;
+        signed_dist = transpose(n)*(pwc - x0);
     otherwise
         error('Collision detection not implemented for params.body_name = %s.',...
             params.body_name);
