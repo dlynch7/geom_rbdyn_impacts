@@ -33,84 +33,29 @@
 function [Twb_post,Vb_post,varargout] = impact_map(Twb_pre,...
                                                    Vb_pre,...
                                                    Twc,...
-                                                   Fb,...
                                                    params)
 
     % configuration doesn't change during impact:
     Twb_post = Twb_pre;
 
-    % set up initial guess:
-    Vb_post_0 = zeros(6,1);
-    imp_mag_0 = params.dyn.mass*params.dyn.grav;
-    x0 = [Vb_post_0;imp_mag_0];
+    % compute Tcb given Twc and Twb:
+    Tcb = TransInv(Twc)*Twb_pre;
+
+    % form spatial inertia matrix in {b} and its inverse:
+    Gb = params.dyn.spatial_inertia_matrix_CoM; % spatial inertia matrix in {b}
+    Gb_inv = diag(1./diag(Gb)); % no need to call inv() to compute Gb_inv
     
-    % set bounds:
-    lb = [-Inf*ones(6,1);-Inf]; % bound impulse below at zero
+    % compute impulse magnitude:
+    n6_c = [zeros(5,1);1]; % contact normal 6-vector in {c}
+    n6_b = transpose(Adjoint(Tcb))*n6_c;
+    t1 = (1 + params.dyn.restitution_coefficient) ...
+       * transpose(n6_b)*Vb_pre;
+    t2 = transpose(n6_b)*Gb_inv*n6_b;
+    impulse_mag = -t1/t2;
+    impulse_b = impulse_mag*n6_b; % impulse 6-vector in {b}
     
-    % call fmincon:
-    options = optimoptions('fmincon','display','none',...
-                           'ConstraintTolerance',1e-12,...
-                           'Algorithm','sqp');
-    fminconstr = @(x) impact_sys_eq(x,Vb_pre,Twb_pre,Twc,params);
-    [x,~,exitflag] = fmincon(@(x)0,x0,[],[],[],[],lb,[],fminconstr,options);
-    if exitflag <= 0
-        error('Failed to solve impact map.');
-    end
-    x = x(:); % ensure column vector
-    
-    % unpack solution
-    Vb_post = x(1:6);
-    impulse_mag = x(7);
-    
-    fprintf('\tE after impact: %f\n',...
-        params.dyn.mass*params.dyn.grav*Twb_pre(3,4) + ...
-        0.5*Vb_post'*params.dyn.spatial_inertia_matrix_CoM*Vb_post)
+    % compute post-impact body twist using momentum conservation:
+    Vb_post = Gb_inv*(Gb*Vb_pre + impulse_b);
     
     varargout{1} = impulse_mag;
-end
-
-%% Helper function: return residual of system of impact equations
-%
-% Description:
-%
-% Inputs:
-%   x: 7x1 vector with the following components:
-%       x(1:6): post-impact body twist:
-%           x(1:3): angular body twist components
-%           x(4:6): linear body twist components
-%       x(7):   magnitude of contact impulse during impact
-%
-% Outputs:
-%   res_ineq: simply []
-%   res: 7x1 residual vector with the following components:
-%       res(1:6): impulse-momentum residual
-%       res(7):   energy residual
-
-function [res_ineq,res_eq] = impact_sys_eq(x,Vb_pre,Twb,Twc,params)
-
-    Vb_post = x(1:6);
-    imp_mag = x(7);
-    
-    % compute Tcb given Twc and Twb:
-    Tcb = TransInv(Twc)*Twb;
-    
-    % contact wrench is just force_mag in z_c direction:
-    Fc = [zeros(5,1);imp_mag];
-
-    Gb = params.dyn.spatial_inertia_matrix_CoM; % spatial inertia matrix in {b}
-    
-    % net wrench in {b} frame:
-    Fb_net = transpose(Adjoint(Tcb))*Fc;
-    
-    % conservation of momentum:
-    momentum_res = Gb*(Vb_post - Vb_pre) - Fb_net;
-    
-    % conservation of energy:
-    KE_pre= transpose(Vb_pre)*Gb*Vb_pre;
-    KE_post= transpose(Vb_post)*Gb*Vb_post;
-    KE_res = KE_post - KE_pre;
-    
-    res_eq = [momentum_res;KE_res];
-    res_ineq = [];
-
 end
