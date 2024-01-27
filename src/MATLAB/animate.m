@@ -45,9 +45,9 @@ ax = gca;
 
 dt = t_list(2) - t_list(1); % TODO: use this when rendering videos
 
-video_name = 'bouncing_football.avi';
-v = VideoWriter(video_name);
-open(v);
+% video_name = 'bouncing_football.avi';
+% v = VideoWriter(video_name);
+% open(v);
 
 for k = 1:numel(t_list)
     plot_ellipsoid(ax,Twb_list{k},bounds3,params);
@@ -62,10 +62,10 @@ for k = 1:numel(t_list)
     zlabel('$z_\mathrm{w}$')
     drawnow;
     
-    M(k) = getframe(fig);
-    writeVideo(v,M(k));
+%     M(k) = getframe(fig);
+%     writeVideo(v,M(k));
 end
 
-close(v);
+% close(v);
 
 end
