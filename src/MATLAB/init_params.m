@@ -20,6 +20,8 @@ function params = init_params(body_name,dimensions)
 params.dyn.grav = 9.81; % acceleration [m/s^2] due to gravity
 params.dyn.mass = 1; % rigid body mass [kg]
 
+params.dyn.restitution_coefficient = 1;
+
 switch body_name
     case 'rect_prism'
         params.body_name = body_name;
