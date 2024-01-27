@@ -33,13 +33,13 @@ Rwb_init = eye(3);
 Twb_init = [Rwb_init,   zeros(3,1);
             zeros(1,3), 1]; % CoM frame coincident with world frame
 Twb_init(3,4) = 1; % initial height above ground [m]
-Vb_init = [10;10;10;0.5;0.1;0];
-% Vb_init = [1;0;0;0;0;0];
+Vb_init = [1;1;1;0;0;0];
+% Vb_init = [0;0;0;0;0;0];
 Fb = zeros(6,1);
         
 dt = 1e-2; % timestep size [s]
 t0 = 0;
-tf = 5; % simulation duration [s]
+tf = 10; % simulation duration [s]
 t = t0:dt:tf;
 
 % event location parameters:
@@ -78,7 +78,6 @@ for k = 1:numel(t)-1
         [Twb_post,Vb_post,impulse_mag] = impact_map(Twb_e,...
                                                     Vb_e,...
                                                     Twc,...
-                                                    Fb,...
                                                     params);
                                               
         % simulate to end of timestep using (Twb_post,Vb_post) as initial
