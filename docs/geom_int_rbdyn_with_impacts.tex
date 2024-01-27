@@ -164,7 +164,7 @@ Note that the state space of the first-order \ac{ODE} above is $\mathcal{X} = \m
 As stated above, our event function $h:\mathbb{SE}(3)\times\mathbb{R}^6 \to \mathbb{R}$ is the distance between the bottom of the ball and the ground.
 If, while integrating Equation \eqref{eq:first_order_state_space_dynamics} from $t_k$ to $t_{k+1}$, we observe that $h(x(t_{k+1})) \neq h(x(t_k))$, we must find the event time $t_\mathrm{e}\in\left[t_k,t_{k+1}\right]$ such that $h(x(t_\mathrm{e}) = 0)$.
 
-We consider two approaches to event finding:
+Consider two approaches to event finding:
 \begin{itemize}
 	\item Bisection root finding;
 	\item Newton-Raphson root finding.
@@ -172,7 +172,6 @@ We consider two approaches to event finding:
 While the bisection method may take more iterations to converge to an acceptable estimate of $t_\mathrm{e}$, it is guaranteed to return an estimate in the time window $\left[t_k,t_{k+1}\right]$.
 Conversely, while the Newton-Raphson method may be more elegant, it is possible it will return an estimate outside $\left[t_k,t_{k+1}\right]$, if $\mathrm{d}h/\mathrm{d}t$ is sufficiently small and $\mathrm{d}^2 h/\mathrm{d}t^2$ is sufficiently large.
 
-\paragraph{Bisection Root Finding}
 Searching for roots of the event function via bisection is simple:
 \begin{enumerate}
 	\item Given a time window $\left[t_k,t_{k+1}\right]$ for which $\mathrm{sign}(h(t_k)) \neq \mathrm{sign}(h(t_{k+1}))$, divide the time window in half to produce two new time windows: $\left[t_k, t_k + \Delta t/2\right]$ and $\left[t_k + \Delta t/2, t_{k+1}\right]$, where $\Delta t = t_{k+1} - t_k$.
@@ -180,123 +179,39 @@ Searching for roots of the event function via bisection is simple:
 	\item Iterate until some convergence criterion is satisfied, or until the maximum number of iterations is reached.
 \end{enumerate}
 
-\paragraph{Newton-Raphson Root Finding}
-Given an initial guess at the event time $t_0\in\left[t_k,t_{k+1}\right]$, the Taylor series expansion of $h(x(t))$ at $t_{0}$ is
-\begin{equation}
-	h(x(t)) = h(x(t_0)) + \mathcal{L}_f h(x(t_0))\left(t - t_n\right) + \mathrm{h.o.t},
-\end{equation}
-where $\mathcal{L}_f h(x(t_0))$ is the Lie derivative of $h$ along $f$ evaluated at the state $x$ at time $t_0$:
-\begin{align}
-	\begin{split}
-		\mathcal{L}_f h(x(t_0)) &= \frac{\mathrm{d}h}{\mathrm{d}t}\bigg\vert_{t_0}\\
-		&= \frac{\partial h}{\partial x}\frac{\mathrm{d}x}{\mathrm{d}t}\bigg\vert_{t_0}\\
-		&= \frac{\partial h}{\partial x}f(x(t_0)),
-	\end{split}
-\end{align}
-where $f$ is the right-hand side of Equation \eqref{eq:first_order_state_space_dynamics}. 
-Neglecting higher-order terms, setting $h(x(t)) = 0$, and solving for $t$, we obtain a first-order approximation for the event time:
-\begin{equation}
-	t \approx t_0 - \left(\mathcal{L}_f h(x(t_0))\right)^{-1}h(x(t_0)).
-\end{equation}
-Updating our initial guess with this new $t$ and repeating the above, we get the following iteration:
-\begin{equation}
-	t_{n+1} = t_{n} - \left(\mathcal{L}_f h(x(t_n))\right)^{-1}h(x(t_n)),
-\end{equation}
-which we repeat until some convergence criterion is satisfied or until the number of iterations reaches a user-specified maximum.
-
-\paragraph{Simple Case - Sphere:}
-The position of the bottom of a sphere with radius $r$ is
-\begin{equation}
-	h(T_\mathrm{wb},\mathcal{V}_\mathrm{b}) = a\transpose T_\mathrm{wb} b - r,
-\end{equation}
-where $a = \left[0,0,1,0\right]\transpose$ and $b = \left[0,0,0,1\right]\transpose$.
-Intuitively, $\mathrm{d}h/\mathrm{d}t$ should be the velocity of the \ac{COM} in the $\hat{z}_\mathrm{w}$ direction: $\mathrm{d}h/\mathrm{d}t = a\transpose\dot{T}_\mathrm{wb} b$.
-For this simple case,
-\begin{equation}
-	\frac{\partial h}{\partial T_\mathrm{wb}} = a b\transpose
-	=
-	\begin{bmatrix}
-		0 & 0 & 0 & 0\\
-		0 & 0 & 0 & 0\\
-		0 & 0 & 0 & 1\\
-		0 & 0 & 0 & 0
-	\end{bmatrix}\textrm{ and }
-	\frac{\partial h}{\partial \mathcal{V}_\mathrm{b}} = 0_{1\times 6}.
-\end{equation}
-It is worth noting that the 4-by-4 matrix above is $G_3$, one of the six generators of the Lie algebra $\mathfrak{se}(3)$:
-\begin{align*}
-	G_1 &= \begin{bmatrix}
-		0 &0 &0 &1\\
-		0 &0 &0 &0\\
-		0 &0 &0 &0\\
-		0 &0 &0 &0
-	\end{bmatrix}, & 
-	G_2 &= \begin{bmatrix}
-		0 &0 &0 &0\\
-		0 &0 &0 &1\\
-		0 &0 &0 &0\\
-		0 &0 &0 &0
-	\end{bmatrix}, & 
-	G_3 &= \begin{bmatrix}
-		0 &0 &0 &0\\
-		0 &0 &0 &0\\
-		0 &0 &0 &1\\
-		0 &0 &0 &0
-	\end{bmatrix}, \\
-	G_4 &= \begin{bmatrix}
-		0 &0 &0 &0\\
-		0 &0 &-1 &0\\
-		0 &1 &0 &0\\
-		0 &0 &0 &0
-	\end{bmatrix}, & 
-	G_5 &= \begin{bmatrix}
-		0 &0 &1 &0\\
-		0 &0 &0 &0\\
-		-1 &0 &0 &0\\
-		0 &0 &0 &0
-	\end{bmatrix}, & 
-	G_6 &= \begin{bmatrix}
-		0 &-1 &0 &0\\
-		1 &0 &0 &0\\
-		0 &0 &0 &0\\
-		0 &0 &0 &0
-	\end{bmatrix}.
-\end{align*}
-This does indeed pull out just the $\hat{z}_\mathrm{w}$-component of $\dot{T}_\mathrm{wb}$, \ie the \ac{COM} velocity in the vertical direction.
-It helps to think about the following pair of operators for ``unpacking'' a matrix into a vector and for ``packing'' a vector into a matrix:
-\begin{align*}
-	\mathrm{vec}: \mathbb{R}^{n\times m} \to \mathbb{R}^{nm},\\
-	\mathrm{unvec}: \mathbb{R}^{nm} \to \mathbb{R}^{n\times m}.
-\end{align*}
-I will follow the row-major convention throughout this document, \ie
-\begin{equation*}
-	\mathrm{vec}\left(\begin{bmatrix}a_{11} & a_{12} \\ a_{21} & a_{22}\end{bmatrix}\right) = \begin{bmatrix} a_{11} & a_{12} & a_{21} & a_{22} \end{bmatrix}\transpose.
-\end{equation*}
-For our simple event function, $\mathrm{vec}\left(\partial h/\partial x\right) = \left[0_{1\times11}, 1, 0_{1\times 10}\right]$.
-
-\paragraph{More Complex Case: Ellipsoid}
 \begin{figure}
 	\centering
-	\includegraphics[width=0.66\linewidth]{graphics/pdf/ellipsoid_kinematics.pdf}
-	\caption{Ellipsoid kinematics.
-	The configuration of the ellipsoid is given by $T_\mathrm{wb}$.
-	The lowest point on the ellipse, located at $\colvec{x}_\mathrm{ext}\big\vert_{\hat{\colvec{e}} = -\hat{\colvec{z}}_\mathrm{w}}$ in the $\cframe{w}$-frame, has unit surface normal $\hat{\colvec{n}}$, which points directly down.
-	The distance from this point to the ground is given by the dot product of $\hat{\colvec{z}}$ and $\colvec{x}_\mathrm{ext}\big\vert_{\hat{\colvec{e}} = -\hat{\colvec{z}}_\mathrm{w}}$.}
+	\includegraphics[width=0.66\linewidth]{graphics/pdf/ellipsoid_contact_kinematics.pdf}
+	\caption{Ellipsoid-plane contact kinematics.
+	The plane is defined by $\hat{\colvec{n}}\transpose\left(\colvec{x} - \colvec{x}_0\right) = 0$.
+	The ellipsoid is defined by $\left(\colvec{x} - \colvec{p}_\mathrm{wb}\right)\transpose R_\mathrm{wb} D R_\mathrm{wb}\transpose \left(\colvec{x} - \colvec{p}_\mathrm{wb}\right) = 1$.
+	Red arrows extending from the ellipsoid surface indicate unit normal vectors.
+	Contact occurs when the point $\colvec{c}$ on the ellipse with corresponding unit normal $-\hat{\colvec{n}}$ also satisfies $\hat{\colvec{n}}\transpose\left(\colvec{c} - \colvec{x}_0\right) = 0$.
+	The point $\colvec{c}$ is the origin of a frame $\cframe{c}$.
+	The orientation of $\cframe{c}$ relative to $\cframe{w}$ is any $R_\mathrm{wc}\in\mathbb{SO}(3)$ such that $\hat{\colvec{z}}_\mathrm{c} = \hat{\colvec{n}}$.
+	}
 	\label{fig:ellipsoid_kinematics}
 \end{figure}
-Suppose instead we want to know the distance between the lowest point on an ellipsoid and the ground, as shown in Figure \ref{fig:ellipsoid_kinematics}.
-The ellipsoid is defined implicitly by the equation
+We want to know the distance between the lowest point on an ellipsoid and a plane, as shown in Figure \ref{fig:ellipsoid_kinematics}.
+The plane is defined by the implicit equation
+\begin{equation}\label{eq:plane_implicit}
+	\hat{\colvec{n}}\transpose\left(\colvec{x} - \colvec{x}_0\right),
+\end{equation}
+where the point $\colvec{x}_0$ and the unit normal $\hat{\colvec{n}}$ are assumed to be known.
+For example, when $\hat{\colvec{n}} = \left[0,0,1\right]\transpose$ and $\colvec{x}_0 = \left[0,0,0\right]\transpose$, the plane is simply the x-y plane.
+
+The ellipsoid is defined by the implicit equation
 \begin{equation}\label{eq:ellipsoid_implicit_Twb}
-\left(\colvec{x} - \colvec{p}_\mathrm{wb}\right)\transpose R_\mathrm{wb} D R_\mathrm{wb}\transpose \left(\colvec{x} - \colvec{p}_\mathrm{wb}\right) = 1,
+	\left(\colvec{x} - \colvec{p}_\mathrm{wb}\right)\transpose R_\mathrm{wb} D R_\mathrm{wb}\transpose \left(\colvec{x} - \colvec{p}_\mathrm{wb}\right) = 1,
 \end{equation}
 where $\colvec{x}\in\mathbb{R}^3$, $\left(R_\mathrm{wb},\colvec{p}_\mathrm{wb}\right)\in\mathbb{SE}(3)$, and $D\in\mathbb{R}^{3\times 3}$ is a diagonal matrix whose entries are the reciprocals of the squares of the semi-axes.
-For convenience, we will write \eqref{eq:ellipsoid_implicit_Twb} in the following more concise form:
+For convenience, we will write Equation \eqref{eq:ellipsoid_implicit_Twb} in the following more concise form:
 \begin{equation}\label{eq:ellipsoid_implicit_simple}
 	\colvec{y}\transpose A \colvec{y} = 1,
 \end{equation}
 where $\colvec{y} = \colvec{x} - \colvec{p}_\mathrm{wb}$ and $A = R_\mathrm{wb} D R_\mathrm{wb}\transpose$.
 Note that $A$ is symmetric.
-We will formulate the event function in a more general setting---how close is the ellipsoid to a (flat) surface whose unit normal vector is $\hat{\colvec{e}}$?---and we will then substitute the unit normal vector corresponding to level ground, $\hat{\colvec{e}} = -\hat{\colvec{z}}_\mathrm{w} = \left[0,0,-1\right]\transpose$.
+We will formulate the event function in a more general setting---how close is the ellipsoid to a flat surface whose unit normal vector is $\hat{\colvec{e}}$?---and we will then substitute the unit normal vector corresponding to level ground, $\hat{\colvec{e}} = -\hat{\colvec{z}}_\mathrm{w} = \left[0,0,-1\right]\transpose$.
 
 For an ellipsoid, the unit vector normal to the surface at the point $\colvec{y}$ furthest in the $\hat{\colvec{e}}$-direction is simply $\hat{\colvec{e}}$.
 The matrix $A$ in Equation \eqref{eq:ellipsoid_implicit_simple} stretches the vector $\colvec{y}$ by some amount $\mu$ and rotates it to align with $\hat{\colvec{e}}$:
@@ -322,56 +237,47 @@ Solving for the scaling factor $\mu$, we get
 	\mu = \frac{1}{\sqrt{\hat{\colvec{e}}A^{-1}\hat{\colvec{e}}}}.
 \end{equation}
 Substituting this expression for $\mu$ into Equation \eqref{eq:furthest_point_on_ellipsoid_simple}, we get
-\begin{equation}
+\begin{equation}\label{eq:closest_point_on_ellipsoid_general}
 	\colvec{y} = \frac{A^{-1}\hat{\colvec{e}}}{\sqrt{\hat{\colvec{e}}A^{-1}\hat{\colvec{e}}}}.
 \end{equation}
-We substitute $\colvec{x}_\mathrm{ext}\big\vert_{\hat{\colvec{e}}} - \colvec{p}_\mathrm{wb}$ for $\colvec{y}$ and $R_\mathrm{wb} D R_\mathrm{wb}\transpose$ for $A$ and solve for $\colvec{x}_\mathrm{ext}\big\vert_{\hat{\colvec{e}}}$, the world-frame position of the point on the ellipsoid that is farthest from the origin of $\cframe{w}$ in the $\hat{\colvec{e}}$-direction:
-\begin{equation}\label{eq:furthest_point_on_ellipsoid_Twb}
-	\colvec{x}_\mathrm{ext}\big\vert_{\hat{\colvec{e}}} = \colvec{p}_\mathrm{wb} + \frac{R_\mathrm{wb} D^{-1} R_\mathrm{wb}\transpose \hat{\colvec{e}}}{\sqrt{\hat{\colvec{e}}\transpose R_\mathrm{wb} D^{-1} R_\mathrm{wb}\transpose \hat{\colvec{e}}}}.
+To find the point on the ellipsoid closest to the plane, we substitute $\hat{\colvec{e}} = -\hat{\colvec{n}}$ and $\colvec{y} = \colvec{c} - \colvec{p}_\mathrm{wb}$ into Equation \eqref{eq:closest_point_on_ellipsoid_general} and solve for $\colvec{c}$:
+\begin{equation}\label{eq:closest_point_on_ellipsoid_Twb}
+	\colvec{c} = \colvec{p}_\mathrm{wb} - \frac{R_\mathrm{wb} D^{-1} R_\mathrm{wb}\transpose \hat{\colvec{n}}}{\sqrt{\hat{\colvec{n}}\transpose R_\mathrm{wb} D^{-1} R_\mathrm{wb}\transpose \hat{\colvec{n}}}}.
 \end{equation}
-Finally, to use Equation \eqref{eq:furthest_point_on_ellipsoid_Twb} to find the point on the ellipsoid closest to the ground, we substitute $\hat{\colvec{e}} = -\hat{\colvec{z}}_\mathrm{w}$ into Equation \eqref{eq:furthest_point_on_ellipsoid_Twb}.
-The event function for the ellipsoid impacting ground is then
-\begin{equation}
-	h\left(T_\mathrm{wb},\mathcal{V}_\mathrm{b}\right) = \hat{\colvec{z}}_\mathrm{w}\transpose\left(\colvec{x}_\mathrm{ext}\big\vert_{\hat{\colvec{e}} = -\hat{\colvec{z}}_\mathrm{w}}\right) = 0.
+
+The signed distance between $\colvec{c}$ and the plane defined by Equation \eqref{eq:plane_implicit} is our event function:
+\begin{equation}\label{eq:event_function_dist_from_plane}
+	h\left(T_\mathrm{wb}\right) = \hat{\colvec{n}}\transpose\left(\colvec{c} - \colvec{x}_0\right).
 \end{equation}
+Contact occurs when $h(T_\mathrm{wb}) = 0$.
 
 \subsubsection{Impact Map}
-Suppose contact occurs at a point $\colvec{c}\in\mathbb{R}^3$.
-The transformation matrix $T_\mathrm{wc}\in\mathbb{SE}(3)$ gives the location of the contact point in $\cframe{w}$ and the orientation $R_\mathrm{wc}\in\mathbb{SO}(3)$ of $\hat{\colvec{e}}$, the unit vector normal to the surface at $\colvec{c}$.
-Assuming frictionless contact, the rigid body experiences a contact force with magnitude $\lambda$ in the direction $\hat{\colvec{e}}$.
-Expressed in $\cframe{c}$, the wrench due to this contact force is $\left[0_{1\times 5},\lambda\right]\transpose$.
+The impact map is derived from conservation of momentum and energy.
+Equation \eqref{eq:closest_point_on_ellipsoid_general} gives the contact point $\colvec{c}\in\mathbb{R}^3$.
+The transformation matrix $T_\mathrm{wc}\in\mathbb{SE}(3)$ gives the location of the contact point in $\cframe{w}$ and the orientation $R_\mathrm{wc}\in\mathbb{SO}(3)$ of $\hat{\colvec{n}}$, the unit vector normal to the plane at $\colvec{c}$.
+Note that $R_\mathrm{wc}$ is somewhat arbitrary: it can be any rotation matrix such that $\hat{z}_\mathrm{c} = \hat{\colvec{n}}$:
+\begin{equation*}
+	R_\mathrm{wc} = \exp\left(\left[\hat{\colvec{n}}\right]\right),
+\end{equation*}
+where $\exp\left(\cdot\right): \mathfrak{so}(3)\to\mathbb{SO}(3)$ is the matrix exponential and $\left[\hat{\colvec{n}}\right]\in\mathfrak{so}(3)$ is the skew-symmetric matrix representation of $\hat{\colvec{n}}\in\mathbb{R}^3$.
 
-At all times, the body also experiences a downward force $-\mathfrak{m}g$ due to gravity.
-Define $\cframe{b'}$ to be the frame coincident with $\cframe{b}$ but aligned with $\cframe{w}$, so that $p_\mathrm{wb'} = p_\mathrm{wb}$ and $R_\mathrm{wb'} = I_{3\times3}$.
-Expressed in $\cframe{b'}$, the wrench due to gravity is $\left[0_{1\times 5},-\mathfrak{m}_\mathrm{b}g\right]\transpose$.
-
-During contact, the net wrench on the body, expressed in $\cframe{b}$, is
+Upon impact, the rigid body experiences an impulse with magnitude $\lambda$ in the direction $\hat{\colvec{n}}$.
+Expressed in $\cframe{c}$, this impulse is $\mathcal{J}_\mathrm{c} = \left[0_{1\times 5},\lambda\right]\transpose$.
+The adjoint representation of $T_\mathrm{cb}$ is used to express this impulse in $\cframe{b}$, where $T_\mathrm{cb} = T_\mathrm{wc}^{-1}T_\mathrm{wb}$:
 \begin{equation}\label{eq:net_body_wrench_during_impact}
-	\mathcal{F}_\mathrm{b}
+	\mathcal{J}_\mathrm{b}
 	=
 	\Ad{cb}\transpose\begin{bmatrix}
 		0_{5\times1}\\
 		\lambda
 	\end{bmatrix}
-	-
-	\Ad{b'b}\transpose\begin{bmatrix}
-		0_{5\times1}\\
-		\mathfrak{m}_\mathrm{b}g
-	\end{bmatrix},
 \end{equation}
-where $T_\mathrm{cb} = T_\mathrm{wc}^{-1}T_\mathrm{wb}$ and $T_\mathrm{b'b} = T_\mathrm{wb'}^{-1}T_\mathrm{wb}$.
-
-We now use the impulse-momentum theorem and conservation of energy to derive the impact map.
-The impulse-momentum theorem states
-\begin{subequations}\label{eq:impulse-momentum-impact}
-	\begin{align}
-		\mathcal{G}_\mathrm{b}\left(\mathcal{V}_\mathrm{b}^+ - \mathcal{V}_\mathrm{b}^-\right) &= \mathcal{F}_\mathrm{b}\textrm{, or, equivalently,}\\
-		\mathcal{V}_\mathrm{b}^+ = \mathcal{V}_\mathrm{b}^- + \mathcal{G}_\mathrm{b}^{-1}\mathcal{F}_\mathrm{b},
-	\end{align}
-\end{subequations}
-where $\mathcal{V}_\mathrm{b}^-\in\mathbb{R}^6$ and $\mathcal{V}_\mathrm{b}^+\in\mathbb{R}^6$ are the body twist before and after impact, respectively, and where the net wrench $\mathcal{F}_\mathrm{b}$ is given in Equation \eqref{eq:net_body_wrench_during_impact}.
-
-Since $T_\mathrm{wb}$ does not change during impact, conservation of energy reduces to a quadratic constraint on the body twist:
+From conservation of momentum, we have
+\begin{equation}\label{eq:impulse-momentum-impact}
+	\mathcal{G}_\mathrm{b}\mathcal{V}_\mathrm{b}^+ = \mathcal{G}_\mathrm{b}\mathcal{V}_\mathrm{b}^- + \mathcal{J}_\mathrm{b},
+\end{equation}
+where $\mathcal{V}_\mathrm{b}^-\in\mathbb{R}^6$ and $\mathcal{V}_\mathrm{b}^+\in\mathbb{R}^6$ are the body twist before and after impact, respectively, and where the impulse $\mathcal{J}_\mathrm{b}$ is given in Equation \eqref{eq:net_body_wrench_during_impact}.
+From conservation of energy, we have
 \begin{equation}\label{eq:energy_conservation_impact}
 	\frac{1}{2}\left(\mathcal{V}_\mathrm{b}^+\right)\transpose\mathcal{G}_\mathrm{b}\mathcal{V}_\mathrm{b}^+
 	=
