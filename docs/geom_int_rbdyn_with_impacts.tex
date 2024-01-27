@@ -252,7 +252,7 @@ The signed distance between $\colvec{c}$ and the plane defined by Equation \eqre
 Contact occurs when $h(T_\mathrm{wb}) = 0$.
 
 \subsubsection{Impact Map}
-The impact map is derived from conservation of momentum and energy.
+The impact map is derived from conservation of momentum.
 Equation \eqref{eq:closest_point_on_ellipsoid_general} gives the contact point $\colvec{c}\in\mathbb{R}^3$.
 The transformation matrix $T_\mathrm{wc}\in\mathbb{SE}(3)$ gives the location of the contact point in $\cframe{w}$ and the orientation $R_\mathrm{wc}\in\mathbb{SO}(3)$ of $\hat{\colvec{n}}$, the unit vector normal to the plane at $\colvec{c}$.
 Note that $R_\mathrm{wc}$ is somewhat arbitrary: it can be any rotation matrix such that $\hat{z}_\mathrm{c} = \hat{\colvec{n}}$:
@@ -262,28 +262,37 @@ Note that $R_\mathrm{wc}$ is somewhat arbitrary: it can be any rotation matrix s
 where $\exp\left(\cdot\right): \mathfrak{so}(3)\to\mathbb{SO}(3)$ is the matrix exponential and $\left[\hat{\colvec{n}}\right]\in\mathfrak{so}(3)$ is the skew-symmetric matrix representation of $\hat{\colvec{n}}\in\mathbb{R}^3$.
 
 Upon impact, the rigid body experiences an impulse with magnitude $\lambda$ in the direction $\hat{\colvec{n}}$.
-Expressed in $\cframe{c}$, this impulse is $\mathcal{J}_\mathrm{c} = \left[0_{1\times 5},\lambda\right]\transpose$.
+Expressed in $\cframe{c}$, this impulse is $\mathcal{J}_\mathrm{c} = \lambda\hat{\colvec{n}}_\mathrm{c}$ where $\hat{\colvec{n}}_\mathrm{c} = \left[0_{1\times 5},1\right]\transpose$.
 The adjoint representation of $T_\mathrm{cb}$ is used to express this impulse in $\cframe{b}$, where $T_\mathrm{cb} = T_\mathrm{wc}^{-1}T_\mathrm{wb}$:
 \begin{equation}\label{eq:net_body_wrench_during_impact}
 	\mathcal{J}_\mathrm{b}
 	=
-	\Ad{cb}\transpose\begin{bmatrix}
-		0_{5\times1}\\
-		\lambda
-	\end{bmatrix}
+	\lambda
+	\underbrace{\Ad{cb}\transpose\hat{\colvec{n}}_\mathrm{c}}_{\hat{\colvec{n}}_\mathrm{b}}.
 \end{equation}
 From conservation of momentum, we have
 \begin{equation}\label{eq:impulse-momentum-impact}
 	\mathcal{G}_\mathrm{b}\mathcal{V}_\mathrm{b}^+ = \mathcal{G}_\mathrm{b}\mathcal{V}_\mathrm{b}^- + \mathcal{J}_\mathrm{b},
 \end{equation}
 where $\mathcal{V}_\mathrm{b}^-\in\mathbb{R}^6$ and $\mathcal{V}_\mathrm{b}^+\in\mathbb{R}^6$ are the body twist before and after impact, respectively, and where the impulse $\mathcal{J}_\mathrm{b}$ is given in Equation \eqref{eq:net_body_wrench_during_impact}.
-From conservation of energy, we have
-\begin{equation}\label{eq:energy_conservation_impact}
-	\frac{1}{2}\left(\mathcal{V}_\mathrm{b}^+\right)\transpose\mathcal{G}_\mathrm{b}\mathcal{V}_\mathrm{b}^+
-	=
-	\frac{1}{2}\left(\mathcal{V}_\mathrm{b}^-\right)\transpose\mathcal{G}_\mathrm{b}\mathcal{V}_\mathrm{b}^-,
+We rearrange Equation \eqref{eq:impulse-momentum-impact} to express the post-impact body twist in terms of the pre-impact body twist, the as-yet-unknown impulse magnitude, and the body's spatial inertia matrix:
+\begin{equation}\label{eq:post_impact_body_twist}
+	\mathcal{V}_\mathrm{b}^+ = \mathcal{V}_\mathrm{b}^- + \lambda \mathcal{G}_\mathrm{b}^{-1}\hat{\colvec{n}}_\mathrm{b},
 \end{equation}
-which is particularly simple since we deliberately choose $\cframe{b}$ such that $\mathcal{G}_\mathrm{b}$ is diagonal.
-Together, Equations \eqref{eq:impulse-momentum-impact} and \eqref{eq:energy_conservation_impact} represent seven constraints and seven unknowns ($\mathcal{V}_\mathrm{b}^+$ and $\lambda$).
+where $\hat{\colvec{n}}_\mathrm{b} = \Ad{cb}\transpose\hat{\colvec{n}}_\mathrm{c}\in\mathbb{R}^6$.
+The system of equations is closed upon introducing the coefficient of restitution $\epsilon\in\left[0,1\right]$:
+\begin{equation}\label{eq:rest_coef_definition}
+	\epsilon = -\frac{\hat{\colvec{n}}_\mathrm{c}\transpose\mathcal{V}_\mathrm{c}^+}{\hat{\colvec{n}}_\mathrm{c}\transpose\mathcal{V}_\mathrm{c}^-} = -\frac{\hat{\colvec{n}}_\mathrm{b}\transpose\mathcal{V}_\mathrm{b}^+}{\hat{\colvec{n}}_\mathrm{b}\transpose\mathcal{V}_\mathrm{b}^-}.
+\end{equation}
+Note that $\epsilon = 0$ represents a perfectly inelastic collision and $\epsilon = 1$ represents a perfectly elastic collision.
+Substituting Equation \eqref{eq:post_impact_body_twist} into Equation \eqref{eq:rest_coef_definition} yields the impulse magnitude:
+\begin{equation}\label{eq:impulse_magnitude_solution}
+	\lambda = -\left(1 + \epsilon\right)\frac{\hat{\colvec{n}}_\mathrm{b}\transpose\mathcal{V}_\mathrm{b}^-}{\hat{\colvec{n}}_\mathrm{b}\transpose\mathcal{G}_\mathrm{b}^{-1}\hat{\colvec{n}}_\mathrm{b}}.
+\end{equation}
+Substituting this solution into Equation \eqref{eq:post_impact_body_twist} yields the post-impact body twist:
+\begin{equation}\label{eq:post_impact_body_twist_solution}
+	\mathcal{V}_\mathrm{b}^+ = \mathcal{V}_\mathrm{b}^- - \left(1 + \epsilon\right)\frac{\hat{\colvec{n}}_\mathrm{b}\transpose\mathcal{V}_\mathrm{b}^-\mathcal{G}_\mathrm{b}^{-1}\hat{\colvec{n}}_\mathrm{b}}{\hat{\colvec{n}}_\mathrm{b}\transpose\mathcal{G}_\mathrm{b}^{-1}\hat{\colvec{n}}_\mathrm{b}}.
+\end{equation}
+
 
 \end{document}
