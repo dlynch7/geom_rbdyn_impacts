@@ -8,3 +8,7 @@
 
 # MATLAB things:
 *.asv
+
+# videos:
+*.avi
+*.mp4
