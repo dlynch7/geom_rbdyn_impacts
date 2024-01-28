@@ -27,14 +27,13 @@ params = init_params(body_name,dimensions);
 
 %% Set initial conditions and numerical integration parameters
 Rwb_init = eye(3);
-% Rwb_init = [0 0 1;
-%             0 1 0;
-%            -1 0 0];
+Rwb_init = [0 0 1;
+            0 1 0;
+           -1 0 0];
 Twb_init = [Rwb_init,   zeros(3,1);
             zeros(1,3), 1]; % CoM frame coincident with world frame
 Twb_init(3,4) = 1; % initial height above ground [m]
-Vb_init = [1;1;1;0;0;0];
-% Vb_init = [0;0;0;0;0;0];
+Vb_init = [10;10;10;0;0;0];
 Fb = zeros(6,1);
         
 dt = 1e-2; % timestep size [s]
@@ -84,11 +83,13 @@ for k = 1:numel(t)-1
         % conditions:
         [~,Twb{k+1},Vb{k+1}] = cg4(ode_fun,t(k+1)-t_e,t_e,Twb_post,Vb_post);
     end
-    
 end
 
 %% Animate simulation
-animate(Twb,t,params);
+options.trace_CoM = false;
+options.record_video = true;
+options.video_name = 'vertical_bouncing_ellipsoid.avi';
+animate(Twb,t,params,options);
 
 %% Postprocess
 % kinematics:
@@ -100,12 +101,35 @@ v_hist = NaN(3,numel(t));
 % event function (distance to impact):
 dist_hist = NaN(1,numel(t));
 
+Gb = params.dyn.spatial_inertia_matrix_CoM;
+
+% energy and momenta:
+E_hist = NaN(1,numel(t)); % mechanical energy
+Lb_hist = NaN(3,numel(t)); % angular momentum in body frame
+Pb_hist = NaN(3,numel(t)); % linear momentum in body frame
+Lw_hist = NaN(3,numel(t)); % angular momentum in world frame
+Pw_hist = NaN(3,numel(t)); % linear momentum in world frame
+
 for k = 1:numel(t)
     Rwb = Twb{k}(1:3,1:3); % orientation of {b} in {w}
     pwb = Twb{k}(1:3,4);   % position of origin of {b} in {s}
     
     % velocity of CoM in world frame:
     v = Rwb*Vb{k}(4:6);
+    
+    % momentum:
+    Pb = Gb*Vb{k};
+    Lb_hist(:,k) = [eye(3),zeros(3)]*Pb; % angular momentum in {b}
+    Pb_hist(:,k) = [zeros(3),eye(3)]*Pb; % linear momentum in {b}
+    Tbw = TransInv(Twb{k});
+    Pw = transpose(Adjoint(Tbw))*Pb;
+    Lw_hist(:,k) = [eye(3),zeros(3)]*Pw; % angular momentum in {w}
+    Pw_hist(:,k) = [zeros(3),eye(3)]*Pw; % linear momentum in {w}
+    
+    % energy
+    KE = 0.5*transpose(Vb{k})*Gb*Vb{k};
+    PE = params.dyn.mass*params.dyn.grav*pwb(3);
+    E = KE + PE;
     
     % distance to impact:
     dist_hist(k) = dist_to_impact(Twb{k},params);
@@ -114,9 +138,53 @@ for k = 1:numel(t)
     Vb_hist(:,k) = Vb{k};
     p_hist(:,k) = pwb;
     v_hist(:,k) = v;
+    E_hist(k) = E;
 end
 
 %% Visualize simulation results
+figure;
+plot(t,E_hist,'k-','LineWidth',2)
+ylabel('Energy [J]')
+xlabel('time $t$ [s]')
+axis([t(1) t(end) 0 1.5*max(E_hist)])
+
+figure;
+subplot(2,2,1)
+plot(t,Lb_hist(1,:),'r-',...
+     t,Lb_hist(2,:),'g-',...
+     t,Lb_hist(3,:),'b-',...
+    'LineWidth',2)
+legend('$L_x$','$L_y$','$L_z$','Location','Best')
+ylabel('Angular momentum $L_\mathrm{b}$ [kg m$^2$/s]')
+title('Momentum in body frame')
+
+subplot(2,2,3)
+plot(t,Pb_hist(1,:),'r-',...
+     t,Pb_hist(2,:),'g-',...
+     t,Pb_hist(3,:),'b-',...
+    'LineWidth',2)
+legend('$P_x$','$P_y$','$P_z$','Location','Best')
+ylabel('Linear momentum $P_\mathrm{b}$ [kg m/s]')
+xlabel('time $t$ [s]')
+
+subplot(2,2,2)
+plot(t,Lw_hist(1,:),'r-',...
+     t,Lw_hist(2,:),'g-',...
+     t,Lw_hist(3,:),'b-',...
+    'LineWidth',2)
+legend('$L_x$','$L_y$','$L_z$','Location','Best')
+ylabel('Angular momentum $L_\mathrm{w}$ [kg m$^2$/s]')
+title('Momentum in world frame')
+
+subplot(2,2,4)
+plot(t,Pw_hist(1,:),'r-',...
+     t,Pw_hist(2,:),'g-',...
+     t,Pw_hist(3,:),'b-',...
+    'LineWidth',2)
+legend('$P_x$','$P_y$','$P_z$','Location','Best')
+ylabel('Linear momentum $P_\mathrm{w}$ [kg m/s]')
+xlabel('time $t$ [s]')
+
 figure;
 subplot(2,1,1)
 plot(t,p_hist(3,:),'k:',t,dist_hist,'k-','LineWidth',2)
