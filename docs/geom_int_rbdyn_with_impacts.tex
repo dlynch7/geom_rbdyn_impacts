@@ -294,5 +294,38 @@ Substituting this solution into Equation \eqref{eq:post_impact_body_twist} yield
 	\mathcal{V}_\mathrm{b}^+ = \mathcal{V}_\mathrm{b}^- - \left(1 + \epsilon\right)\frac{\hat{\colvec{n}}_\mathrm{b}\transpose\mathcal{V}_\mathrm{b}^-\mathcal{G}_\mathrm{b}^{-1}\hat{\colvec{n}}_\mathrm{b}}{\hat{\colvec{n}}_\mathrm{b}\transpose\mathcal{G}_\mathrm{b}^{-1}\hat{\colvec{n}}_\mathrm{b}}.
 \end{equation}
 
+\section{Results}
+\subsection{The Intermediate-Axis Theorem (Dzhanibekov Effect)}
+Before illustrating results for impact simulations, we first illustrate the intermediate-axis theorem, also known as the tennis-racket effect or the Dzhanibekov effect.
+\begin{figure}[h]
+	\centering
+	\begin{subfigure}{0.4\textwidth}
+		\includegraphics[width=\linewidth]{graphics/pdf/dzhanibekov_point_on_unstable_axis_overlay_ellipsoid.pdf}
+		% \caption{}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}{0.55\textwidth}
+		\includegraphics[width=\linewidth]{graphics/pdf/dzhanibekov_angular_momentum_body_frame.pdf}
+		% \caption{}
+	\end{subfigure}
+	\caption{Illustration of the Dzhanibekov effect: in the absence of external torques, a rigid body spinning about its intermediate principal inertia axis (the $y_\mathrm{b}$ axis in this figure) is unstable, and it alternates between opposite orientations along this axis.
+	Left: trace of the point on the ellipsoid furthest in the $\hat{y}_\mathrm{b}$ direction for 100 seconds of simulation.
+	Right: angular momentum component $L_y$ alternates between +0.25 kg-m/s and -0.25 kg-m/s.
+	The ellipsoid has mass $\mathfrak{m}_\mathrm{b} = 1$ kg, and principal semi-axis lengths of 0.05 m, 0.1, and 0.2 m along $\hat{x}_\mathrm{b}$, $\hat{y}_\mathrm{b}$, and $\hat{z}_\mathrm{b}$, respectively.
+	Simulator timestep is 0.01 seconds, and $\mathcal{V}_\mathrm{b(0)} = \left[0.001,25,0.001,0,0,0\right]\transpose$ (SI units).}
+	\label{fig:dzhanibekov_ang_mom_body}
+\end{figure}
+
+\subsection{A Bouncing Football}
+We present results for a bouncing ellipsoid that resembles an American football.
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=0.75\linewidth]{graphics/pdf/bouncing_football_trace_CoM.pdf}
+	\caption{\ac{COM} trajectory $\colvec{p}_\mathrm{wb}(t)$ for a bouncing football simulated with a timestep of 0.01 seconds and perfectly elastic collisions, \ie $\epsilon = 1$.
+	Initial conditions: $R_\mathrm{wb}(0) = I_{3\times3}$, $\colvec{p}_\mathrm{wb}(0) = \left[0,0,1\right]\transpose$, $\mathcal{V}_\mathrm{b}(0) = \left[10,10,10,0.5,0.1,0\right]\transpose$ (SI units).
+	The football has mass $\mathfrak{m}_\mathrm{b} = 1$ kg and principal semi-axis lengths of 0.1 m, 0.1, and 0.15 m along $\hat{x}_\mathrm{b}$, $\hat{y}_\mathrm{b}$, and $\hat{z}_\mathrm{b}$, respectively.
+	Acceleration due to gravity is 9.81 m/s$^2$.}
+	\label{fig:bouncing_football_CoM_traj}
+\end{figure}
 
 \end{document}
