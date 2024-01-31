@@ -29,6 +29,11 @@
 \newcommand{\Ad}[1]{\left[\mathrm{Ad}_{T_\mathrm{#1}}\right]}
 \newcommand{\ad}[1]{\left[\mathrm{ad}_{\mathcal{V}_\mathrm{#1}}\right]}
 
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{proposition}{Proposition}
+\newtheorem{corollary}{Corollary}
+
 \theoremstyle{definition}
 \newtheorem{definition}{Definition}[section]
 
@@ -257,18 +262,74 @@ Contact occurs when $h(T_\mathrm{wb}) = 0$.
 We introduce the superellipsoid as a smooth approximation of a rectangular prism.
 A superellipsoid is a generalization of an ellipsoid in the following sense:
 \begin{align}\label{eq:ellipsoid_vs_superellipsoid}
-	\textrm{ellipsoid:~}&f(\colvec{y}) = \sum_{j=1}^{3} \left(\frac{y_j}{r_j}\right)^2 - 1 = 0\\
-	\textrm{superellipsoid:~}&f(\colvec{y}) = \sum_{j=1}^{3} \left(\frac{x_j}{r_j}\right)^{2/\varepsilon} - 1 = 0,
+	\textrm{ellipsoid:~}&f(\colvec{y}) = \sum_{j=1}^{3} \left(\frac{y_j}{d_j}\right)^2 = 1\\
+	\textrm{superellipsoid:~}&f(\colvec{y}) = \sum_{j=1}^{3} \left(\frac{y_j}{d_j}\right)^{2/\varepsilon} = 1,
 \end{align}
-where $\colvec{y} = \left(y_1,y_2,y_3\right)$ is an arbitrary point in three-dimensional space and $r_1$, $r_2$, and $r_3$ are the semi-axis lengths of the ellipsoid.
+where $\colvec{y} = \left(y_1,y_2,y_3\right)$ is an arbitrary point in three-dimensional space and $d_1$, $d_2$, and $d_3$ are the semi-axis lengths of the ellipsoid.
 Increasing the smoothness parameter $\varepsilon$ from 0 up to 1 has the effect of smoothing the corners of a rectangular prism until it becomes an ellipsoid.
 Increasing $\varepsilon$ above 1 results in concave surfaces and is not considered further in this document.
 
 Equation \eqref{eq:ellipsoid_vs_superellipsoid} produces a superellipsoid centered at the origin and oriented along the principal axes.
 The surface of a superellipsoid under a rigid-body transformation $T = \left(R,p\right),~T: \colvec{y}\mapsto\colvec{x}$ is found by inverting the rigid body transformation so as to map $\colvec{x}$ to $\colvec{y}$ and then applying the equation of the untransformed superellipsoid:
 \begin{equation}
-	f(\colvec{x}) = \sum_{i=1}^{3}\left(\frac{1}{r_i}\sum_{j=1}^{3}R_{ji}\left(y_j - p_j\right)\right)^{2/\varepsilon} - 1 = 0.
+	f(\colvec{x}) = f\left(T^{-1}\left(\colvec{y}\right)\right) = \sum_{i=1}^{3}\left(\frac{1}{d_i}\sum_{j=1}^{3}R_{ji}\left(y_j - p_j\right)\right)^{2/\varepsilon} = 1.
 \end{equation}
+
+We now formulate the event function for a superellipsoid as the distance between the plane and the nearest point on the surface of the superellipsoid.
+Since the superellipsoid with $\varepsilon < 1$ is convex, the point $\colvec{y}_0$ on the ellipsoid furthest in the $\hat{\colvec{e}}$-direction has unit normal $\hat{\colvec{n}}_{\colvec{y}_0} = \hat{\colvec{e}}$.
+The point $\colvec{y}_0$ on the superellipsoid with unit surface normal $\hat{\colvec{e}}$ is some scalar multiple of $\hat{\colvec{e}}$:
+\begin{align}
+	\begin{split}
+	f(\mu\hat{\colvec{e}}) = 1 &= \sum_{j=1}^{3} \left(\frac{y_j}{d_j}\right)^{2/\varepsilon}\\
+	&= \sum_{j=1}^{3} \left(\frac{\mu e_j}{d_j}\right)^{2/\varepsilon}\\
+	&= \mu^{2/\varepsilon}f\left(\hat{\colvec{e}}\right).
+	\end{split}
+\end{align}
+Solving for $\mu$, we find
+\begin{equation}
+	\mu = f\left(\hat{\colvec{e}}\right)^{-\varepsilon/2}.
+\end{equation}
+Finally, scaling $\hat{\colvec{e}}$ by $\mu$ gives the point on the ellipsoid with unit surface normal $\hat{\colvec{e}}$:
+\begin{align}\label{eq:point_on_untransformed_superellipsoid_with_given_unit_normal}
+	\colvec{y}_0 &= \mu\hat{\colvec{e}}\\
+	&= f\left(\hat{\colvec{e}}\right)^{-\varepsilon/2}\hat{\colvec{e}}.
+\end{align}
+We now generalize this approach to a superellipsoid undergoing a rigid-body transformation $T = \left(R_\mathrm{wb},\colvec{p}_\mathrm{wb}\right)\in\mathbb{SE}(3)$.
+
+\begin{lemma}
+The point $\colvec{c}\in\mathbb{R}^3$ on a superellipsoid $f(\colvec{x}) = 1$ with configuration $T\in\mathbb{SE}(3),T = \left(R_\mathrm{wb},\colvec{p}_\mathrm{wb}\right)$ for which the unit vector normal to the superellipsoid surface is $\hat{\colvec{d}}$, is
+\begin{equation}
+	\colvec{c} = f\left(R_\mathrm{wb}\transpose\hat{\colvec{d}}\right)^{-\varepsilon/2}\hat{\colvec{d}} + \colvec{p}_\mathrm{wb}.
+\end{equation}
+\end{lemma}
+\begin{proof}
+We solve this problem in three steps, exploiting the fact that $T$ is invertible:
+\begin{enumerate}
+	\item Use $T^{-1}$ to map $\hat{\colvec{d}}$ back to $\hat{\colvec{e}}$, the unit surface normal of the un-transformed superellipsoid.
+	We tend to think of a unit vector normal to a surface at some point as extending from that point, but really it extends from the origin.
+	Therefore, we need only rotate $\hat{\colvec{d}}$ by $R_\mathrm{wb}^{-1} = R_\mathrm{wb}\transpose$ to obtain $\hat{\colvec{e}}$:
+	\begin{equation*}
+		\hat{\colvec{e}} = R_\mathrm{wb}\transpose\hat{\colvec{d}}.
+	\end{equation*}
+
+	\item Use Equation \eqref{eq:point_on_untransformed_superellipsoid_with_given_unit_normal} to find $\colvec{y}_0$, the point on the surface of the untransformed ellipsoid for which the unit vector normal to the surface is $\hat{\colvec{e}}$:
+	\begin{align*}
+		\begin{split}
+			\colvec{y}_0 &= f\left(\hat{\colvec{e}}\right)^{-\varepsilon/2}\hat{\colvec{e}}\\
+			&= f\left(R_\mathrm{wb}\transpose\hat{\colvec{d}}\right)^{-\varepsilon/2}R_\mathrm{wb}\transpose\hat{\colvec{d}}.
+		\end{split}
+	\end{align*}
+
+	\item Use $T$ to map $\colvec{y}_0$ forward to $\colvec{c}$:
+	\begin{align*}
+		\begin{split}
+			\colvec{c} &= R_\mathrm{wb}\colvec{y}_0 + \colvec{p}_\mathrm{wb}\\
+			&= \cancel{R_\mathrm{wb}}f\left(R_\mathrm{wb}\transpose\hat{\colvec{d}}\right)^{-\varepsilon/2}\cancel{R_\mathrm{wb}\transpose}\hat{\colvec{d}} + \colvec{p}_\mathrm{wb}\\
+			&= f\left(R_\mathrm{wb}\transpose\hat{\colvec{d}}\right)^{-\varepsilon/2}\hat{\colvec{d}} + \colvec{p}_\mathrm{wb}.
+		\end{split}
+	\end{align*}
+\end{enumerate}
+\end{proof}
 
 \subsubsection{Impact Map}
 The impact map is derived from conservation of momentum.
