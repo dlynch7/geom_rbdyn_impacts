@@ -84,7 +84,7 @@ for k = 1:numel(t_list)
     plot_ellipsoid(ax,Twb_list{k},bounds3,params);
     hold on
     plot_ground(ax,bounds3,params);
-    plot3(ywb(1,1:k),ywb(2,1:k),ywb(3,1:k),'k-','LineWidth',1);
+    % plot3(ywb(1,1:k),ywb(2,1:k),ywb(3,1:k),'k-','LineWidth',1);
     if trace_CoM
         plot3(squeeze(Twb_mat(1,4,1:k)),...
               squeeze(Twb_mat(2,4,1:k)),...
@@ -96,6 +96,8 @@ for k = 1:numel(t_list)
     
     axis equal
     axis(bounds3);
+    % axis equal
+    axis vis3d
 %     view([45,30])
     xlabel('$x_\mathrm{w}$')
     ylabel('$y_\mathrm{w}$')
