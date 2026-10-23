@@ -17,10 +17,11 @@
 
 function params = init_params(body_name,dimensions)
 
-params.dyn.grav = 0; % acceleration [m/s^2] due to gravity
+params.dyn.grav = 9.81; % acceleration [m/s^2] due to gravity
 params.dyn.mass = 1; % rigid body mass [kg]
 
 params.dyn.restitution_coefficient = 1;
+params.dyn.friction_coefficient = 0;
 
 switch body_name
     case 'rect_prism'
@@ -63,7 +64,7 @@ switch body_name
         % geometry:
         params.viz.ellipsoid.face.num = 20;
         params.viz.ellipsoid.face.color = 0.75*[0 1 1];
-%         params.viz.ellipsoid.face.color = [139,69,19]./255;
+        params.viz.ellipsoid.face.color = [139,69,19]./255;
         params.viz.ellipsoid.face.alpha = 0.75;
         params.viz.ellipsoid.edge.color = [0 0 0];
         params.viz.ellipsoid.edge.alpha = 0.5;
@@ -80,6 +81,7 @@ params.dyn.inertia_matrix = diag([Ixx,Iyy,Izz]);
 % inertia:
 params.dyn.spatial_inertia_matrix_CoM = [params.dyn.inertia_matrix, zeros(3);
                                          zeros(3), params.dyn.mass*eye(3)];
+params.dyn.inv_spatial_inertia_matrix_CoM = inv(params.dyn.spatial_inertia_matrix_CoM);
                                      
 params.viz.margin_scale = 1.5;
 
