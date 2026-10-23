@@ -21,8 +21,8 @@ clc;
 init_env;
 body_name = 'ellipsoid';
 dimensions.ellipsoid.a = 0.05;
-dimensions.ellipsoid.b = 0.1;
-dimensions.ellipsoid.c = 0.2;
+dimensions.ellipsoid.b = 0.05;
+dimensions.ellipsoid.c = 0.1;
 params = init_params(body_name,dimensions);
 
 %% Set initial conditions and numerical integration parameters
@@ -32,14 +32,14 @@ Rwb_init = eye(3);
 %            -1 0 0];
 Twb_init = [Rwb_init,   zeros(3,1);
             zeros(1,3), 1]; % CoM frame coincident with world frame
-Twb_init(3,4) = 1; % initial height above ground [m]
+Twb_init(3,4) = 0.5; % initial height above ground [m]
 % Vb_init = [10;10;10;0;0;0];
-Vb_init = [1e-3;25;1e-3;0;0;0];
+Vb_init = [1;1;1;-1;0;0];
 Fb = zeros(6,1);
         
 dt = 1e-2; % timestep size [s]
 t0 = 0;
-tf = 20; % simulation duration [s]
+tf = 5; % simulation duration [s]
 t = t0:dt:tf;
 
 % event location parameters:
@@ -87,9 +87,9 @@ for k = 1:numel(t)-1
 end
 
 %% Animate simulation
-options.trace_CoM = false;
+options.trace_CoM = true;
 options.record_video = true;
-options.video_name = 'Dzhanibekov_longer.avi';
+options.video_name = 'bounce_with_infinite_friction.avi';
 animate(Twb,t,params,options);
 
 %% Postprocess
