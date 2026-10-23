@@ -6,6 +6,9 @@
 %   jump discontinuity. The impact map is derived from conservation of
 %   momentum and conservation of energy.
 %
+% Reference: Roy Featherstone, "Rigid Body Dynamics Algorithms", 2008.
+%   Chapter 11: Contact and Impact - Section 11.7 (Impulsive Dynamics).
+%
 % Inputs:
 %   Twb_pre: pre-impact configuration of the rigid body's CoM frame {b}
 %       relative to the world frame {w}, represented as a 4x4 homogeneous
@@ -40,19 +43,41 @@ function [Twb_post,Vb_post,varargout] = impact_map(Twb_pre,...
 
     % compute Tcb given Twc and Twb:
     Tcb = TransInv(Twc)*Twb_pre;
+    Tbc = TransInv(Tcb);
 
     % form spatial inertia matrix in {b} and its inverse:
     Gb = params.dyn.spatial_inertia_matrix_CoM; % spatial inertia matrix in {b}
     Gb_inv = diag(1./diag(Gb)); % no need to call inv() to compute Gb_inv
+
+    Gc = transpose(Adjoint(TransInv(Tcb)))*Gb*Adjoint(TransInv(Tcb));
+
+    % 6x3 matrix spanning the space of possible contact impulses:
+    nx_c = [0;0;0;1;0;0]; % contact tangent vector in {c} (contact frame) 
+    ny_c = [0;0;0;0;1;0]; % contact tangent vector in {c} (contact frame)
+    nz_c = [0;0;0;0;0;1]; % contact normal  vector in {c} (contact frame)
+    N_c = [nx_c,ny_c,nz_c];
+    N_b = transpose(Adjoint(Tcb))*N_c; % columns of N_c are co-vectors
+
+    % matrix of restitution coefficients:
+    E = diag([0,0,params.dyn.restitution_coefficient]);
+
+    % compute contact impulse in {c} given pre-contact state:
+    Vc_pre = Adjoint(Tcb)*Vb_pre;
+    t1 = transpose(N_c)*(Gc\N_c);
+    t2 = (eye(3) + E)*transpose(N_c)*Vc_pre;
+    impulse_c = -[0;0;0;t1\t2];
+    impulse_mag = norm(impulse_c);
+
+    impulse_b = transpose(Adjoint(TransInv(Tbc)))*impulse_c;
     
-    % compute impulse magnitude:
-    n6_c = [zeros(5,1);1]; % contact normal 6-vector in {c}
-    n6_b = transpose(Adjoint(Tcb))*n6_c;
-    t1 = (1 + params.dyn.restitution_coefficient) ...
-       * transpose(n6_b)*Vb_pre;
-    t2 = transpose(n6_b)*Gb_inv*n6_b;
-    impulse_mag = -t1/t2;
-    impulse_b = impulse_mag*n6_b; % impulse 6-vector in {b}
+    % % compute impulse magnitude:
+    % n6_c = [zeros(5,1);1]; % contact normal 6-vector in {c}
+    % n6_b = transpose(Adjoint(Tcb))*n6_c;
+    % t1 = (1 + params.dyn.restitution_coefficient) ...
+    %    * transpose(n6_b)*Vb_pre;
+    % t2 = transpose(n6_b)*Gb_inv*n6_b;
+    % impulse_mag = -t1/t2;
+    % impulse_b = impulse_mag*n6_b; % impulse 6-vector in {b}
     
     % compute post-impact body twist using momentum conservation:
     Vb_post = Gb_inv*(Gb*Vb_pre + impulse_b);
