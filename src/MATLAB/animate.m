@@ -75,10 +75,16 @@ if record_video
     pause(1);
 end
 
+ywb = NaN(4,numel(t_list));
+
 for k = 1:numel(t_list)
+    % compute point on ellipsoid surface along y_b axis:
+    ywb(:,k) = Twb_list{k}*[0;-params.geom.ellipsoid.semi_axes.b;0;1];
+    
     plot_ellipsoid(ax,Twb_list{k},bounds3,params);
     hold on
     plot_ground(ax,bounds3,params);
+    plot3(ywb(1,1:k),ywb(2,1:k),ywb(3,1:k),'k-','LineWidth',1);
     if trace_CoM
         plot3(squeeze(Twb_mat(1,4,1:k)),...
               squeeze(Twb_mat(2,4,1:k)),...
@@ -90,6 +96,7 @@ for k = 1:numel(t_list)
     
     axis equal
     axis(bounds3);
+%     view([45,30])
     xlabel('$x_\mathrm{w}$')
     ylabel('$y_\mathrm{w}$')
     zlabel('$z_\mathrm{w}$')

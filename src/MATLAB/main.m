@@ -20,25 +20,26 @@ clc;
 
 init_env;
 body_name = 'ellipsoid';
-dimensions.ellipsoid.a = 0.1;
+dimensions.ellipsoid.a = 0.05;
 dimensions.ellipsoid.b = 0.1;
-dimensions.ellipsoid.c = 0.15;
+dimensions.ellipsoid.c = 0.2;
 params = init_params(body_name,dimensions);
 
 %% Set initial conditions and numerical integration parameters
 Rwb_init = eye(3);
-Rwb_init = [0 0 1;
-            0 1 0;
-           -1 0 0];
+% Rwb_init = [0 0 1;
+%             0 1 0;
+%            -1 0 0];
 Twb_init = [Rwb_init,   zeros(3,1);
             zeros(1,3), 1]; % CoM frame coincident with world frame
 Twb_init(3,4) = 1; % initial height above ground [m]
-Vb_init = [10;10;10;0;0;0];
+% Vb_init = [10;10;10;0;0;0];
+Vb_init = [1e-3;25;1e-3;0;0;0];
 Fb = zeros(6,1);
         
 dt = 1e-2; % timestep size [s]
 t0 = 0;
-tf = 10; % simulation duration [s]
+tf = 20; % simulation duration [s]
 t = t0:dt:tf;
 
 % event location parameters:
@@ -88,7 +89,7 @@ end
 %% Animate simulation
 options.trace_CoM = false;
 options.record_video = true;
-options.video_name = 'vertical_bouncing_ellipsoid.avi';
+options.video_name = 'Dzhanibekov_longer.avi';
 animate(Twb,t,params,options);
 
 %% Postprocess
